@@ -172,3 +172,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# My local files:
+My_run_ollama_in_colab_v05.ipynb  
+ToDo.md  
