@@ -175,4 +175,5 @@ cython_debug/
 
 # My local files:
 My_run_ollama_in_colab_v05.ipynb  
-ToDo.md  
+ToDo.md
+*.log  
