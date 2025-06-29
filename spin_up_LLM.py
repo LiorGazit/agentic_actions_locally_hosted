@@ -51,6 +51,7 @@ def spin_up_LLM(chosen_llm: str, local_or_remote: str = "local"):
         # 3) Wait until it’s ready
         print("⏳ Waiting for Ollama to be ready…")
         wait_for_ollama_ready()
+        print("Ready!\n")
 
         # 4) Pull the requested model
         print(f"🚀 Pulling model '{chosen_llm}'…")
@@ -68,7 +69,7 @@ def spin_up_LLM(chosen_llm: str, local_or_remote: str = "local"):
         )
         if lst.returncode != 0:
             raise RuntimeError(f"Error listing models: {lst.stderr}")
-        print(f"Available models:\n{lst.stdout}")
+        print(f"\nAvailable models:\n{lst.stdout}")
 
         # 6) Ensure langchain-ollama is installed
         print("🚀 Installing langchain-ollama…")
@@ -82,6 +83,7 @@ def spin_up_LLM(chosen_llm: str, local_or_remote: str = "local"):
         from langchain_ollama.llms import OllamaLLM
 
         # 7) Return the OllamaLLM wrapper
+        print("All done setting up Ollama and local LLM.\n")
         return OllamaLLM(model=chosen_llm)
 
     else:
