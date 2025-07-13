@@ -15,16 +15,25 @@ def wait_for_ollama_ready(host: str = "127.0.0.1", port: int = 11434, timeout: i
             sleep(1)
     raise RuntimeError(f"Ollama server at {url} failed to start within {timeout}s.")
 
-def spin_up_LLM(chosen_llm: str, local_or_remote: str = "local"):
+def spin_up_LLM(
+    chosen_llm: str,
+    local_or_remote: str = "local",
+    provider: str = None,
+    api_key: str = None,
+    **kwargs
+):
     """
-    Spins up and returns a LangChain-compatible LLM.
+    Spins up and returns a LangChain-compatible LLM for local (Ollama) or remote (OpenAI) use.
     
     Args:
-      chosen_llm:  name of the model to load (e.g. "mistral", "gemma3")
-      local_or_remote:  "local" to use Ollama; otherwise a NotImplementedError is raised.
+      chosen_llm:      name of the model to load (e.g. "mistral", "gemma3", or "gpt-4o")
+      local_or_remote: "local" for Ollama, "remote" for API (OpenAI etc)
+      provider:        "openai" for remote usage
+      api_key:         API key for the remote provider (if needed)
+      kwargs:          Any additional params passed to the LLM initializer
     
     Returns:
-      A langchain_ollama.llms.OllamaLLM instance.
+      A LangChain LLM object (OllamaLLM or ChatOpenAI)
     """
     if local_or_remote == "local":
         # 1) Install Ollama if missing
@@ -85,7 +94,34 @@ def spin_up_LLM(chosen_llm: str, local_or_remote: str = "local"):
         # 7) Return the OllamaLLM wrapper
         print("All done setting up Ollama and local LLM.\n")
         return OllamaLLM(model=chosen_llm)
+        
+    elif local_or_remote == "remote":
+        # Support "openai" (default)
+        provider = provider or "openai"
+        if provider.lower() == "openai":
+            print("🚀 Setting up remote OpenAI model…")
+            try:
+                from langchain_openai import ChatOpenAI
+            except ImportError:
+                print("Installing langchain-openai...")
+                pip = subprocess.run(
+                    'pip install -U langchain-openai', capture_output=True, text=True, shell=True
+                )
+                if pip.returncode != 0:
+                    raise RuntimeError(f"Error installing langchain-openai: {pip.stderr}")
+                from langchain_openai import ChatOpenAI
 
+            # API key required
+            import os
+            if not api_key:
+                api_key = os.environ.get("OPENAI_API_KEY")
+                if not api_key:
+                    raise ValueError("No OpenAI API key provided. Pass it as 'api_key' or set the OPENAI_API_KEY environment variable.")
+
+            # Return LangChain OpenAI chat model
+            print("All done setting up OpenAI LLM.\n")
+            return ChatOpenAI(model=chosen_llm, api_key=api_key, **kwargs)
+        else:
+            raise NotImplementedError(f"Remote provider '{provider}' is not yet supported.")
     else:
-        # Placeholder for remote LLM logic
-        raise NotImplementedError("Remote LLM support is not yet implemented.")
+        raise ValueError("local_or_remote must be either 'local' or 'remote'.")
